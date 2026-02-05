@@ -63,8 +63,8 @@ async def root(request: Request):
     if request.method in ("HEAD", "OPTIONS"):
         return Response(status_code=200)
 
-    # Serve the frontend UI
-    if os.path.exists("index.html"):
+    # Serve the frontend UI only on GET
+    if request.method == "GET" and os.path.exists("index.html"):
         return FileResponse("index.html")
 
     return guvi_ok(
