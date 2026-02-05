@@ -59,9 +59,12 @@ def guvi_ok(reply: str):
 # ROOT (Serves UI)
 # -------------------------------------------------
 @app.api_route("/", methods=["GET", "POST", "HEAD", "OPTIONS"])
-async def root(request: Request):
+async def root(request: Request, x_api_key: str = Header(None)):
     if request.method in ("HEAD", "OPTIONS"):
         return Response(status_code=200)
+    
+    if request.method == "POST":
+        return await honeypot_internal(request, x_api_key)
 
     # Serve the frontend UI only on GET
     if request.method == "GET" and os.path.exists("index.html"):
