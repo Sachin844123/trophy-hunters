@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import requests
 import json
+import os
 
 from agent import get_llm_analysis, extract_intel
 from nlp_gate import detect_scam_nlp
@@ -55,12 +56,16 @@ def guvi_ok(reply: str):
     )
 
 # -------------------------------------------------
-# ROOT
+# ROOT (Serves UI)
 # -------------------------------------------------
 @app.api_route("/", methods=["GET", "POST", "HEAD", "OPTIONS"])
 async def root(request: Request):
     if request.method in ("HEAD", "OPTIONS"):
         return Response(status_code=200)
+
+    # Serve the frontend UI
+    if os.path.exists("index.html"):
+        return FileResponse("index.html")
 
     return guvi_ok(
         "Arre kya bol rahe ho? Account block ho jayega kya? Please thoda clearly batao."

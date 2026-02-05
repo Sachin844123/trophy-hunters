@@ -296,7 +296,8 @@
 
   <script>
     const API_KEY = "test-key-123";
-    const API_URL = "http://127.0.0.1:8000/honeypot";
+    // Use relative path so it works on both Localhost and Render
+    const API_URL = "/honeypot";
 
     let conversationHistory = [];
 
