@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Honeypot API Tester</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e5e7eb;
+      padding: 20px;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: rgba(2, 6, 23, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 1;
+      animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
+      letter-spacing: -0.5px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 30px 0 15px 0;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+      border-radius: 2px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-top: 24px;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      color: #e5e7eb;
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    textarea:focus,
+    input:focus {
+      border-color: #3b82f6;
+      background: rgba(15, 23, 42, 0.8);
+      box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.1),
+        0 4px 12px rgba(59, 130, 246, 0.15);
+      transform: translateY(-1px);
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+      color: #475569;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:
+        0 4px 12px rgba(59, 130, 246, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 6px 20px rgba(59, 130, 246, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow:
+        0 2px 8px rgba(59, 130, 246, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+
+    pre {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 20px;
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      border-radius: 12px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cbd5e1;
+      font-family: 'Consolas', 'Monaco', monospace;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    pre::selection {
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #3b82f6, #2563eb);
+      border-radius: 5px;
+      border: 2px solid rgba(15, 23, 42, 0.5);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    }
+
+    /* Floating particles effect */
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      animation: float 20s infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 0;
+      }
+
+      10%,
+      90% {
+        opacity: 1;
+      }
+
+      50% {
+        transform: translate(100px, -100px) rotate(180deg);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 24px;
+        margin: 20px auto;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Floating particles -->
+  <div class="particle" style="top: 10%; left: 20%; animation-delay: 0s;"></div>
+  <div class="particle" style="top: 60%; left: 80%; animation-delay: 5s;"></div>
+  <div class="particle" style="top: 30%; left: 50%; animation-delay: 10s;"></div>
+  <div class="particle" style="top: 80%; left: 30%; animation-delay: 15s;"></div>
+
+  <div class="container">
+    <h2>🪤 Honeypot API Testing UI</h2>
+
+    <label>Session ID</label>
+    <input id="sessionId" value="ui-test-session" placeholder="Enter session identifier..." />
+
+    <label>Scammer Message</label>
+    <textarea id="message"
+      placeholder="Type scammer message here...">Send your UPI ID immediately or your account will be blocked.</textarea>
+
+    <button onclick="sendMessage()">Send Message</button>
+
+    <h3>API Response</h3>
+    <pre id="response">Waiting for response...</pre>
+  </div>
+
+  <script>
+    const API_KEY = "test-key-123";
+    const API_URL = "http://127.0.0.1:8000/honeypot";
+
+    let conversationHistory = [];
+
+    async function sendMessage() {
+      const sessionId = document.getElementById("sessionId").value;
+      const text = document.getElementById("message").value;
+
+      const payload = {
+        sessionId: sessionId,
+        message: {
+          sender: "scammer",
+          text: text,
+          timestamp: new Date().toISOString()
+        },
+        conversationHistory: conversationHistory
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": API_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        let display = "API Response:\n" + JSON.stringify(data, null, 2);
+        if (!data.reply) {
+          display += "\n\nℹ️ No reply yet — system is observing.";
+        }
+
+        document.getElementById("response").textContent = display;
+
+        // Update history
+        conversationHistory.push({
+          sender: "scammer",
+          text: text,
+          timestamp: new Date().toISOString()
+        });
+
+        if (data.reply) {
+          conversationHistory.push({
+            sender: "user",
+            text: data.reply,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+      } catch (err) {
+        document.getElementById("response").textContent = err.toString();
+      }
+    }
+  </script>
+</body>
+
+</html>
