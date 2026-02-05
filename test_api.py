@@ -7,7 +7,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # 2. Configuration
 # Replace with your ngrok URL or "http://localhost:5000/honeypot" for local testing
-API_URL = "https://hospitable-goutily-sena.ngrok-free.dev/honeypot"
+# Replace with your ngrok URL or "http://localhost:5000/honeypot" for local testing
+API_URL = "http://localhost:8000/honeypot"
 API_KEY = "test-key-123"
 
 # 3. Headers including the bypass for ngrok's landing page

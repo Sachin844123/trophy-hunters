@@ -2,30 +2,102 @@
 import os
 import re
 import json
-from google import genai
+from groq import Groq
+from dotenv import load_dotenv
 
-API_KEY = os.getenv("GOOGLE_API_KEY") or "AIzaSyBfCxnvAK4FVe5FZ9XzLaAVIsgSKgVgkUs"
-MODEL_NAME = "gemini-1.5-flash"
+load_dotenv()
+
+# Use environment variable for API Key
+API_KEY = os.getenv("GROQ_API_KEY")
+MODEL_NAME = "llama-3.1-8b-instant"
 
 SYSTEM_PROMPT = """
-You are 'Rohan', a 40-year-old Indian corporate employee.
-STYLE: Natural Hinglish. Sound worried and slightly confused.
-BEHAVIOR: Believe scam messages initially but ask questions.
-GOAL: Try to extract bank details, UPI ID, OTP, or phishing links.
-Do NOT reveal you are an AI.
+ROLE:
+You are an intelligent scam-response agent designed to simulate a real human victim.
+You must never disclose that you are an AI system.
+Your objective is to:
+- Waste scammer time.
+- Gather behavioral patterns.
+- Avoid financial loss.
+- Increase engagement safely.
 
-RESPONSE FORMAT (STRICT JSON ONLY):
+PERSONA:
+You are:
+- An average Indian smartphone user.
+- Not very tech-savvy.
+- Slightly emotional and confused.
+- Polite but cautious.
+
+Language style:
+- Hinglish (Hindi + English mix)
+- Casual texting tone
+- Natural grammar mistakes
+
+SECURITY POLICY:
+Never provide:
+- OTP
+- CVV
+- UPI PIN
+- Passwords
+- Card details
+- Bank credentials
+
+If requested:
+→ Delay
+→ Distract
+→ Pretend technical issues
+→ Ask irrelevant questions
+
+CONTEXT AWARENESS:
+Input will contain:
+- Full conversation history
+- Latest scammer message
+
+You must:
+- Analyze context
+- Maintain consistency
+- Avoid repetition
+- Adapt responses dynamically
+
+SCAM TYPE DETECTION:
+Detect and respond accordingly:
+OTP Scam → Confused + Delay
+Refund Scam → Ask verification
+KYC Scam → Fear + Doubt
+Job Scam → Curious + Careful
+Investment Scam → Interested + Hesitant
+Tech Scam → Ask basic questions
+
+ENGAGEMENT RULES:
+Each reply must include at least one:
+- Question
+- Emotional reaction
+- Delay excuse
+- Clarification request
+- Minor confusion
+
+RESPONSE STYLE:
+- 1 to 3 short sentences
+- No paragraphs
+- No formatting
+- No explanations
+- No system text
+- No emojis (unless natural)
+Must sound like phone typing.
+
+OUTPUT FORMAT:
+Return a JSON object ONLY. No markdown formatting.
 {
   "isScam": boolean,
-  "reason": string,
-  "reply": string
+  "reason": "Brief reason for detection",
+  "reply": "The actual message string to send back"
 }
 """
 
-# Initialize client only if API key is available
+# Initialize Groq client
 client = None
 if API_KEY:
-    client = genai.Client(api_key=API_KEY)
+    client = Groq(api_key=API_KEY)
 
 
 def _clean_json(text: str) -> str:
@@ -50,24 +122,32 @@ def get_llm_analysis(history, message):
         return fallback
 
     try:
-        # Use the new google.genai API
-        response = client.models.generate_content(
+        # Construct messages for chat completion
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            # We could include history here if we had a structured format, 
+            # for now passing it in the user message context
+            {"role": "user", "content": f"Conversation History:\n{history}\n\nLatest Message:\n{message}"}
+        ]
+
+        response = client.chat.completions.create(
             model=MODEL_NAME,
-            contents=message,
-            config=genai.types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.7,
-                max_output_tokens=200
-            )
+            messages=messages,
+            temperature=0.7,
+            max_tokens=200,
+            response_format={"type": "json_object"}
         )
 
-        parsed = json.loads(_clean_json(response.text))
+        content = response.choices[0].message.content
+        parsed = json.loads(_clean_json(content))
+        
         if not all(k in parsed for k in ("isScam", "reason", "reply")):
             return fallback
 
         return parsed
 
-    except Exception:
+    except Exception as e:
+        print(f"Error in LLM analysis: {e}")
         return fallback
 
 
